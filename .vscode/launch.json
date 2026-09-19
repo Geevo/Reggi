@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "C#: RegTerm (dotnet)",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}\\RegTerm\\RegTerm.csproj",
+            "launchConfigurationId": "TargetFramework=;RegTerm"
+        },
+        {            
+            "name": "C#: RegTerm (coreclr)",
+            "type": "coreclr",
+            "request": "launch",
+            "console":"externalTerminal",
+            "preLaunchTask": "Build: RegTerm.csproj",
+            "program": "${workspaceFolder}/RegTerm/bin/Debug/net10.0-windows/regterm.dll",
+        }
+    ]
+}
