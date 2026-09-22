@@ -1,6 +1,6 @@
 # Reggi
 
-A registry editor that lives in your Windows terminal. Browse keys, inspect values, make edits, and search without opening `regedit.exe`.
+A Windows Registry editor for your terminal — browse keys, search, and edit values.
 
 ![Reggi browsing HKEY_CURRENT_USER in Windows Terminal](docs/reggi.png)
 
