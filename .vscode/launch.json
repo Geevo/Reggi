@@ -1,19 +1,19 @@
 {
     "configurations": [
         {
-            "name": "C#: RegTerm (dotnet)",
+            "name": "C#: Reggi (dotnet)",
             "type": "dotnet",
             "request": "launch",
-            "projectPath": "${workspaceFolder}\\RegTerm\\RegTerm.csproj",
-            "launchConfigurationId": "TargetFramework=;RegTerm"
+            "projectPath": "${workspaceFolder}\\Reggi\\Reggi.csproj",
+            "launchConfigurationId": "TargetFramework=;Reggi"
         },
         {            
-            "name": "C#: RegTerm (coreclr)",
+            "name": "C#: Reggi (coreclr)",
             "type": "coreclr",
             "request": "launch",
             "console":"externalTerminal",
-            "preLaunchTask": "Build: RegTerm.csproj",
-            "program": "${workspaceFolder}/RegTerm/bin/Debug/net10.0-windows/regterm.dll",
+            "preLaunchTask": "Build: Reggi.csproj",
+            "program": "${workspaceFolder}/Reggi/bin/Debug/net10.0-windows/reggi.dll",
         }
     ]
 }
