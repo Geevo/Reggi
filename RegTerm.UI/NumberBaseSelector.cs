@@ -8,11 +8,11 @@ namespace RegTerm.UI;
 /// </summary>
 internal sealed class NumberBaseSelector
 {
-    private readonly RadioGroup radio;
+    private readonly RadioGroup _radio;
 
     public NumberBaseSelector(int x, int y, NumberBase initial = NumberBase.Hexadecimal)
     {
-        radio = new RadioGroup([(NStack.ustring)"Hexadecimal", (NStack.ustring)"Decimal"])
+        _radio = new RadioGroup([(NStack.ustring)"Hexadecimal", (NStack.ustring)"Decimal"])
         {
             X = x,
             Y = y,
@@ -22,14 +22,14 @@ internal sealed class NumberBaseSelector
         };
     }
 
-    public View View => radio;
+    public View View => _radio;
 
-    public NumberBase Current => radio.SelectedItem == 1 ? NumberBase.Decimal : NumberBase.Hexadecimal;
+    public NumberBase Current => _radio.SelectedItem == 1 ? NumberBase.Decimal : NumberBase.Hexadecimal;
 
     public bool Enabled
     {
-        get => radio.Enabled;
-        set => radio.Enabled = value;
+        get => _radio.Enabled;
+        set => _radio.Enabled = value;
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ internal sealed class NumberBaseSelector
     {
         var previous = Current;
 
-        radio.SelectedItemChanged += _ =>
+        _radio.SelectedItemChanged += _ =>
         {
             var next = Current;
             if (next == previous) return;

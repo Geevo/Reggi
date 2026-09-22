@@ -25,7 +25,12 @@ public static class SearchDialogs
         var keys = new CheckBox("Key names") { X = 1, Y = 5, Checked = previous?.MatchKeys ?? true };
         var valueNames = new CheckBox("Value names") { X = 1, Y = 6, Checked = previous?.MatchValueNames ?? true };
         var valueData = new CheckBox("Value data") { X = 1, Y = 7, Checked = previous?.MatchData ?? true };
-        var whole = new CheckBox("Match whole string only") { X = 1, Y = 9, Checked = previous?.WholeStringOnly ?? false };
+        var whole = new CheckBox("Match whole string only")
+        {
+            X = 1,
+            Y = 9,
+            Checked = previous?.WholeStringOnly ?? false
+        };
 
         SearchQuery? result = null;
         var find = new Button("Find", is_default: true);

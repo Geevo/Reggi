@@ -25,7 +25,7 @@ internal static class Draw
         {
             var rune = NextRune(text, ref i);
 
-        // Tabs and newlines would move the cursor.
+            // Tabs and newlines would move the cursor.
             if (rune == '\t' || rune == '\n' || rune == '\r') rune = ' ';
 
             var cells = Rune.ColumnWidth(rune);
@@ -68,7 +68,7 @@ internal static class Draw
 }
 
 /// <summary>
-    /// Column widths shared by the values header and rows.
+/// Column widths shared by the values header and rows.
 /// </summary>
 internal readonly record struct ValueColumns(int Name, int Type, int Data)
 {

@@ -9,10 +9,10 @@ namespace RegTerm.UI;
 /// </summary>
 public static class Theme
 {
-    private const Color Surface = Color.Black;
-    private const Color Text = Color.Gray;
-    private const Color Muted = Color.DarkGray;
-    private const Color Accent = Color.BrightCyan;
+    private const Color _surface = Color.Black;
+    private const Color _text = Color.Gray;
+    private const Color _muted = Color.DarkGray;
+    private const Color _accent = Color.BrightCyan;
 
     public static ColorScheme Pane { get; private set; } = null!;
     public static ColorScheme Frame { get; private set; } = null!;
@@ -30,23 +30,23 @@ public static class Theme
     public static Attribute Error { get; private set; }
     public static Attribute Heading { get; private set; }
 
-    private static Attribute stringValue;
-    private static Attribute numericValue;
-    private static Attribute binaryValue;
+    private static Attribute _stringValue;
+    private static Attribute _numericValue;
+    private static Attribute _binaryValue;
 
     public static void Apply()
     {
-        Normal = Attribute.Make(Text, Surface);
-        Dimmed = Attribute.Make(Muted, Surface);
-        Highlight = Attribute.Make(Accent, Surface);
-        Selected = Attribute.Make(Surface, Accent);
+        Normal = Attribute.Make(_text, _surface);
+        Dimmed = Attribute.Make(_muted, _surface);
+        Highlight = Attribute.Make(_accent, _surface);
+        Selected = Attribute.Make(_surface, _accent);
         SelectedBlurred = Attribute.Make(Color.White, Color.DarkGray);
-        Error = Attribute.Make(Color.BrightRed, Surface);
-        Heading = Attribute.Make(Color.White, Surface);
+        Error = Attribute.Make(Color.BrightRed, _surface);
+        Heading = Attribute.Make(Color.White, _surface);
 
-        stringValue = Attribute.Make(Color.BrightGreen, Surface);
-        numericValue = Attribute.Make(Color.BrightYellow, Surface);
-        binaryValue = Attribute.Make(Color.BrightMagenta, Surface);
+        _stringValue = Attribute.Make(Color.BrightGreen, _surface);
+        _numericValue = Attribute.Make(Color.BrightYellow, _surface);
+        _binaryValue = Attribute.Make(Color.BrightMagenta, _surface);
 
         Pane = new ColorScheme
         {
@@ -86,7 +86,7 @@ public static class Theme
 
         Dialog = new ColorScheme
         {
-            Normal = Attribute.Make(Text, Color.Black),
+            Normal = Attribute.Make(_text, Color.Black),
             Focus = Selected,
             HotNormal = Highlight,
             HotFocus = Selected,
@@ -121,8 +121,8 @@ public static class Theme
     /// <summary>Colour used for a value's data, chosen by its type.</summary>
     public static Attribute ForValueKind(RegistryValueType kind) => kind switch
     {
-        RegistryValueType.DWord or RegistryValueType.QWord => numericValue,
-        RegistryValueType.Binary or RegistryValueType.None => binaryValue,
-        _ => stringValue
+        RegistryValueType.DWord or RegistryValueType.QWord => _numericValue,
+        RegistryValueType.Binary or RegistryValueType.None => _binaryValue,
+        _ => _stringValue
     };
 }

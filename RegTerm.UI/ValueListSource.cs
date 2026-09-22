@@ -9,31 +9,31 @@ namespace RegTerm.UI;
 /// </summary>
 public sealed class ValueListSource : IListDataSource
 {
-    private IReadOnlyList<RegistryValueItem> items = [];
-    private string? notice;
-    private bool noticeIsError;
+    private IReadOnlyList<RegistryValueItem> _items = [];
+    private string? _notice;
+    private bool _noticeIsError;
 
-    public bool ShowingNotice => notice is not null;
-    public int Count => notice is not null ? 1 : items.Count;
+    public bool ShowingNotice => _notice is not null;
+    public int Count => _notice is not null ? 1 : _items.Count;
     public int Length => 120;
 
     public void SetValues(IReadOnlyList<RegistryValueItem> values)
     {
-        items = values;
-        notice = null;
-        noticeIsError = false;
+        _items = values;
+        _notice = null;
+        _noticeIsError = false;
     }
 
     public void SetNotice(string text, bool isError)
     {
-        items = [];
-        notice = text;
-        noticeIsError = isError;
+        _items = [];
+        _notice = text;
+        _noticeIsError = isError;
     }
 
     /// <summary>The value at a row, or null if this row is a notice.</summary>
     public RegistryValueItem? At(int index) =>
-        notice is null && index >= 0 && index < items.Count ? items[index] : null;
+        _notice is null && index >= 0 && index < _items.Count ? _items[index] : null;
 
     public void Render(ListView container, ConsoleDriver driver, bool selected, int item,
                        int col, int line, int width, int start = 0)
@@ -41,10 +41,10 @@ public sealed class ValueListSource : IListDataSource
         // IListDataSource coordinates are relative to the ListView.
         container.Move(col, line);
 
-        if (notice is not null)
+        if (_notice is not null)
         {
-            if (!selected) driver.SetAttribute(noticeIsError ? Theme.Error : Theme.Dimmed);
-            Draw.Cell(driver, notice, width);
+            if (!selected) driver.SetAttribute(_noticeIsError ? Theme.Error : Theme.Dimmed);
+            Draw.Cell(driver, _notice, width);
             return;
         }
 
@@ -76,7 +76,7 @@ public sealed class ValueListSource : IListDataSource
     /// <summary>
     /// Returns one entry per row reported by <see cref="Count"/>.
     /// </summary>
-    public IList ToList() => notice is not null
-        ? new List<string> { notice }
-        : items.Select(v => v.DisplayName).ToList();
+    public IList ToList() => _notice is not null
+        ? new List<string> { _notice }
+        : _items.Select(v => v.DisplayName).ToList();
 }

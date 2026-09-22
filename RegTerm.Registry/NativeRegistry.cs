@@ -9,12 +9,12 @@ namespace RegTerm.Registry;
 /// </summary>
 internal static class NativeRegistry
 {
-    private const int ErrorSuccess = 0;
-    private const int ErrorFileNotFound = 2;
-    private const int ErrorAccessDenied = 5;
-    private const int ErrorInvalidParameter = 87;
-    private const int ErrorCallNotImplemented = 120;
-    private const int ErrorAlreadyExists = 183;
+    private const int _errorSuccess = 0;
+    private const int _errorFileNotFound = 2;
+    private const int _errorAccessDenied = 5;
+    private const int _errorInvalidParameter = 87;
+    private const int _errorCallNotImplemented = 120;
+    private const int _errorAlreadyExists = 183;
 
     /// <summary>
     /// LSTATUS RegRenameKey(HKEY hKey, LPCWSTR lpSubKeyName, LPCWSTR lpNewKeyName).
@@ -32,17 +32,17 @@ internal static class NativeRegistry
         // The RegistryKey must outlive the raw handle handed to the API.
         GC.KeepAlive(parent);
 
-        if (status == ErrorSuccess) return;
+        if (status == _errorSuccess) return;
         throw new InvalidOperationException(Describe(status, subKeyName, newName));
     }
 
     private static string Describe(int status, string subKeyName, string newName) => status switch
     {
-        ErrorAccessDenied => "Access denied. Run in an elevated terminal to rename this key.",
-        ErrorAlreadyExists => $"A key named '{newName}' already exists here.",
-        ErrorFileNotFound => $"'{subKeyName}' no longer exists.",
-        ErrorInvalidParameter => $"'{newName}' is not a valid key name.",
-        ErrorCallNotImplemented => "This version of Windows does not support renaming keys.",
+        _errorAccessDenied => "Access denied. Run in an elevated terminal to rename this key.",
+        _errorAlreadyExists => $"A key named '{newName}' already exists here.",
+        _errorFileNotFound => $"'{subKeyName}' no longer exists.",
+        _errorInvalidParameter => $"'{newName}' is not a valid key name.",
+        _errorCallNotImplemented => "This version of Windows does not support renaming keys.",
         _ => new Win32Exception(status).Message
     };
 }

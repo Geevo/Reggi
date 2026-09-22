@@ -5,7 +5,7 @@ namespace RegTerm.Registry;
 
 public sealed class RegistryService : IRegistryService
 {
-    private static readonly string[] Hives =
+    private static readonly string[] _hives =
     [
         "HKEY_CLASSES_ROOT",
         "HKEY_CURRENT_USER",
@@ -14,7 +14,7 @@ public sealed class RegistryService : IRegistryService
         "HKEY_CURRENT_CONFIG"
     ];
 
-    public IReadOnlyList<string> HiveNames => Hives;
+    public IReadOnlyList<string> HiveNames => _hives;
 
     public IReadOnlyList<string> GetSubKeyNames(RegistryPath path)
     {

@@ -6,28 +6,29 @@ namespace RegTerm.UI;
 /// <summary>
 /// Terminal UI controller.
 /// </summary>
-public sealed class RegistryApplication(IRegistryService registry)
+public sealed class RegistryApplication(IRegistryService registryService)
 {
-    private const int TypeAheadTimeoutMs = 800;
+    private const int _typeAheadTimeoutMs = 800;
 
-    private readonly KeyTree tree = new(registry);
-    private readonly ValueListSource valueSource = new();
+    private readonly IRegistryService _registry = registryService;
+    private readonly KeyTree _tree = new(registryService);
+    private readonly ValueListSource _valueSource = new();
 
-    private KeyTreeSource treeSource = null!;
-    private PathBarView pathBar = null!;
-    private FrameView keysFrame = null!;
-    private FrameView valuesFrame = null!;
-    private ListView keysList = null!;
-    private ListView valuesList = null!;
+    private KeyTreeSource _treeSource = null!;
+    private PathBarView _pathBar = null!;
+    private FrameView _keysFrame = null!;
+    private FrameView _valuesFrame = null!;
+    private ListView _keysList = null!;
+    private ListView _valuesList = null!;
 
-    private RegistryPath current;
-    private SearchQuery? lastQuery;
-    private RegistrySearch? activeSearch;
-    private string typeAheadBuffer = string.Empty;
-    private DateTime typeAheadLast = DateTime.MinValue;
+    private RegistryPath _current;
+    private SearchQuery? _lastQuery;
+    private RegistrySearch? _activeSearch;
+    private string _typeAheadBuffer = string.Empty;
+    private DateTime _typeAheadLast = DateTime.MinValue;
 
     /// <summary>Set while rebuilding a list, so selection events do not re-enter.</summary>
-    private bool suppressSelectionEvents;
+    private bool _suppressSelectionEvents;
 
     public void Run()
     {
@@ -37,11 +38,11 @@ public sealed class RegistryApplication(IRegistryService registry)
             Theme.Apply();
             BuildLayout();
 
-            tree.LoadHives();
-            treeSource = new KeyTreeSource(tree);
+            _tree.LoadHives();
+            _treeSource = new KeyTreeSource(_tree);
             SyncTree(0);
 
-            keysList.SetFocus();
+            _keysList.SetFocus();
             Application.Run();
         }
         finally
@@ -55,9 +56,9 @@ public sealed class RegistryApplication(IRegistryService registry)
         var top = Application.Top;
         top.ColorScheme = Theme.Pane;
 
-        pathBar = new PathBarView { X = 0, Y = 0, Width = Dim.Fill(), ColorScheme = Theme.PathBar };
+        _pathBar = new PathBarView { X = 0, Y = 0, Width = Dim.Fill(), ColorScheme = Theme.PathBar };
 
-        keysFrame = new FrameView("Keys")
+        _keysFrame = new FrameView("Keys")
         {
             X = 0,
             Y = 1,
@@ -66,16 +67,16 @@ public sealed class RegistryApplication(IRegistryService registry)
             ColorScheme = Theme.Frame
         };
 
-        valuesFrame = new FrameView("Values")
+        _valuesFrame = new FrameView("Values")
         {
-            X = Pos.Right(keysFrame),
+            X = Pos.Right(_keysFrame),
             Y = 1,
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
             ColorScheme = Theme.Frame
         };
 
-        keysList = new ListView
+        _keysList = new ListView
         {
             X = 0,
             Y = 0,
@@ -84,10 +85,10 @@ public sealed class RegistryApplication(IRegistryService registry)
             AllowsMarking = false,
             ColorScheme = Theme.Pane
         };
-        keysFrame.Add(keysList);
+        _keysFrame.Add(_keysList);
 
         var header = new ValueHeaderView { X = 0, Y = 0, Width = Dim.Fill(), ColorScheme = Theme.Pane };
-        valuesList = new ListView
+        _valuesList = new ListView
         {
             X = 0,
             Y = 1,
@@ -96,16 +97,16 @@ public sealed class RegistryApplication(IRegistryService registry)
             AllowsMarking = false,
             ColorScheme = Theme.Pane
         };
-        valuesFrame.Add(header, valuesList);
+        _valuesFrame.Add(header, _valuesList);
 
-        ScrollBars.AttachVertical(keysList);
-        ScrollBars.AttachVertical(valuesList);
+        ScrollBars.AttachVertical(_keysList);
+        ScrollBars.AttachVertical(_valuesList);
 
         WireKeysPane();
         WireValuesPane();
         WireGlobalShortcuts(top);
 
-        top.Add(pathBar, keysFrame, valuesFrame, BuildStatusBar());
+        top.Add(_pathBar, _keysFrame, _valuesFrame, BuildStatusBar());
     }
 
     private StatusBar BuildStatusBar() => new(
@@ -124,16 +125,16 @@ public sealed class RegistryApplication(IRegistryService registry)
 
     private void WireKeysPane()
     {
-        keysList.SelectedItemChanged += _ =>
+        _keysList.SelectedItemChanged += _ =>
         {
-            if (suppressSelectionEvents) return;
+            if (_suppressSelectionEvents) return;
             UpdateCurrentFromTree();
         };
 
-        keysList.OpenSelectedItem += _ => StepInto();
-        keysList.Enter += _ => RefreshFrameTitles();
+        _keysList.OpenSelectedItem += _ => StepInto();
+        _keysList.Enter += _ => RefreshFrameTitles();
 
-        keysList.KeyPress += e =>
+        _keysList.KeyPress += e =>
         {
             switch (e.KeyEvent.Key)
             {
@@ -150,7 +151,7 @@ public sealed class RegistryApplication(IRegistryService registry)
                     ToggleSelected();
                     break;
                 case Key.Tab:
-                    valuesList.SetFocus();
+                    _valuesList.SetFocus();
                     break;
                 case Key.CursorUp:
                 case Key.CursorDown:
@@ -166,23 +167,23 @@ public sealed class RegistryApplication(IRegistryService registry)
             e.Handled = true;
         };
 
-        keysList.MouseClick += _ => keysList.SetFocus();
+        _keysList.MouseClick += _ => _keysList.SetFocus();
     }
 
     private void WireValuesPane()
     {
-        valuesList.OpenSelectedItem += _ => EditSelectedValue();
-        valuesList.Enter += _ => RefreshFrameTitles();
+        _valuesList.OpenSelectedItem += _ => EditSelectedValue();
+        _valuesList.Enter += _ => RefreshFrameTitles();
 
-        valuesList.KeyPress += e =>
+        _valuesList.KeyPress += e =>
         {
             switch (e.KeyEvent.Key)
             {
                 case Key.Tab:
-                    keysList.SetFocus();
+                    _keysList.SetFocus();
                     break;
                 case Key.Backspace:
-                    keysList.SetFocus();
+                    _keysList.SetFocus();
                     StepOut();
                     break;
                 case Key.Enter:
@@ -195,7 +196,7 @@ public sealed class RegistryApplication(IRegistryService registry)
             e.Handled = true;
         };
 
-        valuesList.MouseClick += _ => valuesList.SetFocus();
+        _valuesList.MouseClick += _ => _valuesList.SetFocus();
     }
 
     private void WireGlobalShortcuts(Toplevel top)
@@ -236,62 +237,62 @@ public sealed class RegistryApplication(IRegistryService registry)
 
     private void StepInto()
     {
-        var index = keysList.SelectedItem;
-        var node = tree[index];
+        var index = _keysList.SelectedItem;
+        var node = _tree[index];
         if (node is null) return;
 
         if (!node.HasChildren) return;
 
         if (!node.Expanded)
         {
-            tree.Expand(index);
+            _tree.Expand(index);
             SyncTree(index);
             return;
         }
 
-        var child = tree.FirstChildIndex(index);
+        var child = _tree.FirstChildIndex(index);
         if (child >= 0) SyncTree(child);
     }
 
     private void StepOut()
     {
-        var index = keysList.SelectedItem;
-        var node = tree[index];
+        var index = _keysList.SelectedItem;
+        var node = _tree[index];
         if (node is null) return;
 
         if (node.Expanded)
         {
-            tree.Collapse(index);
+            _tree.Collapse(index);
             SyncTree(index);
             return;
         }
 
-        var parent = tree.ParentIndex(index);
+        var parent = _tree.ParentIndex(index);
         if (parent.HasValue) SyncTree(parent.Value);
     }
 
     private void ToggleSelected()
     {
-        var index = keysList.SelectedItem;
-        if (tree.Toggle(index)) SyncTree(index);
+        var index = _keysList.SelectedItem;
+        if (_tree.Toggle(index)) SyncTree(index);
     }
 
     private void ReloadCurrent()
     {
-        var index = keysList.SelectedItem;
-        tree.Reload(index);
+        var index = _keysList.SelectedItem;
+        _tree.Reload(index);
         SyncTree(index);
     }
 
     /// <summary>Rebinds the tree list after a structural change and restores the selection.</summary>
     private void SyncTree(int selectIndex)
     {
-        var target = tree.Count == 0 ? 0 : Math.Clamp(selectIndex, 0, tree.Count - 1);
+        var target = _tree.Count == 0 ? 0 : Math.Clamp(selectIndex, 0, _tree.Count - 1);
 
-        suppressSelectionEvents = true;
-        keysList.Source = treeSource;           // resets selection and scroll offset
-        if (tree.Count > 0) keysList.SelectedItem = target;
-        suppressSelectionEvents = false;
+        _suppressSelectionEvents = true;
+        _keysList.Source = _treeSource;           // resets selection and scroll offset
+        if (_tree.Count > 0) _keysList.SelectedItem = target;
+        _suppressSelectionEvents = false;
 
         ScrollTreeIntoView(target);
         UpdateCurrentFromTree();
@@ -299,71 +300,71 @@ public sealed class RegistryApplication(IRegistryService registry)
 
     private void ScrollTreeIntoView(int index)
     {
-        var height = keysList.Bounds.Height;
-        if (height <= 0 || tree.Count == 0) return;
+        var height = _keysList.Bounds.Height;
+        if (height <= 0 || _tree.Count == 0) return;
 
         var half = Math.Max(0, height / 2 - 1);
-        var topItem = Math.Clamp(index - half, 0, Math.Max(0, tree.Count - height));
-        keysList.TopItem = topItem;
-        keysList.SetNeedsDisplay();
+        var topItem = Math.Clamp(index - half, 0, Math.Max(0, _tree.Count - height));
+        _keysList.TopItem = topItem;
+        _keysList.SetNeedsDisplay();
     }
 
     private void UpdateCurrentFromTree()
     {
-        var node = tree[keysList.SelectedItem];
+        var node = _tree[_keysList.SelectedItem];
         if (node is null) return;
 
-        current = node.Path;
-        pathBar.Path = current;
+        _current = node.Path;
+        _pathBar.Path = _current;
         LoadValues(0);
     }
 
     private void LoadValues(int? preferredSelection)
     {
-        var desired = preferredSelection ?? valuesList.SelectedItem;
-        var listing = registry.GetValues(current);
+        var desired = preferredSelection ?? _valuesList.SelectedItem;
+        var listing = _registry.GetValues(_current);
 
         if (listing.Denied)
-            valueSource.SetNotice(listing.AccessError!, isError: true);
+            _valueSource.SetNotice(listing.AccessError!, isError: true);
         else if (listing.Values.Count == 0)
-            valueSource.SetNotice("(this key has no values)", isError: false);
+            _valueSource.SetNotice("(this key has no values)", isError: false);
         else
-            valueSource.SetValues(listing.Values);
+            _valueSource.SetValues(listing.Values);
 
-        suppressSelectionEvents = true;
-        valuesList.Source = valueSource;
-        if (valueSource.Count > 0)
-            valuesList.SelectedItem = Math.Clamp(desired, 0, valueSource.Count - 1);
-        suppressSelectionEvents = false;
+        _suppressSelectionEvents = true;
+        _valuesList.Source = _valueSource;
+        if (_valueSource.Count > 0)
+            _valuesList.SelectedItem = Math.Clamp(desired, 0, _valueSource.Count - 1);
+        _suppressSelectionEvents = false;
 
-        valuesList.SetNeedsDisplay();
+        _valuesList.SetNeedsDisplay();
         RefreshFrameTitles();
     }
 
     /// <summary>Shows counts in the frame titles and marks which pane has focus.</summary>
     private void RefreshFrameTitles()
     {
-        keysFrame.Title = keysList.HasFocus ? "Keys ●" : "Keys";
-        valuesFrame.Title = valueSource.ShowingNotice
-            ? (valuesList.HasFocus ? "Values ●" : "Values")
-            : $"Values ({valueSource.Count})" + (valuesList.HasFocus ? " ●" : string.Empty);
+        _keysFrame.Title = _keysList.HasFocus ? "Keys ●" : "Keys";
+        _valuesFrame.Title = _valueSource.ShowingNotice
+            ? (_valuesList.HasFocus ? "Values ●" : "Values")
+            : $"Values ({_valueSource.Count})" + (_valuesList.HasFocus ? " ●" : string.Empty);
     }
 
     private RegistryValueItem? SelectedValue() =>
-        valueSource.ShowingNotice ? null : valueSource.At(valuesList.SelectedItem);
+        _valueSource.ShowingNotice ? null : _valueSource.At(_valuesList.SelectedItem);
 
     private void EditSelectedValue()
     {
-        if (!valuesList.HasFocus && valueSource.ShowingNotice)
+        if (!_valuesList.HasFocus && _valueSource.ShowingNotice)
         {
             Dialogs.Error("Nothing to edit", "The selected key has no values to edit.");
             return;
         }
 
-        if (!valuesList.HasFocus)
+        if (!_valuesList.HasFocus)
         {
-            valuesList.SetFocus();
-            if (valuesList.SelectedItem < 0) valuesList.SelectedItem = 0;
+            _valuesList.SetFocus();
+            if (_valuesList.SelectedItem < 0) _valuesList.SelectedItem = 0;
         }
 
         var value = SelectedValue();
@@ -379,46 +380,46 @@ public sealed class RegistryApplication(IRegistryService registry)
         var parsed = Dialogs.EditValue(value);
         if (parsed is null) return;
 
-        var selection = valuesList.SelectedItem;
-        if (TryWrite(() => registry.SetValue(current, value.Name, parsed, value.Kind), "Cannot save value"))
+        var selection = _valuesList.SelectedItem;
+        if (TryWrite(() => _registry.SetValue(_current, value.Name, parsed, value.Kind), "Cannot save value"))
             LoadValues(selection);
     }
 
     private void CreateValue()
     {
-        var request = Dialogs.NewValue(current);
+        var request = Dialogs.NewValue(_current);
         if (request is null) return;
 
-        if (TryWrite(() => registry.CreateValue(current, request.Name, request.Value, request.Kind),
+        if (TryWrite(() => _registry.CreateValue(_current, request.Name, request.Value, request.Kind),
                      "Cannot create value"))
             LoadValues(null);
     }
 
     private void CreateKey()
     {
-        var name = Dialogs.NewKeyName(current);
+        var name = Dialogs.NewKeyName(_current);
         if (name is null) return;
 
-        if (!TryWrite(() => registry.CreateSubKey(current, name), "Cannot create key")) return;
+        if (!TryWrite(() => _registry.CreateSubKey(_current, name), "Cannot create key")) return;
 
-        var index = tree.IndexOf(current);
+        var index = _tree.IndexOf(_current);
         if (index < 0) return;
 
-        tree.Reload(index);
-        var created = tree.IndexOf(current.Child(name));
+        _tree.Reload(index);
+        var created = _tree.IndexOf(_current.Child(name));
         SyncTree(created >= 0 ? created : index);
     }
 
     private void DeleteSelected()
     {
-        if (keysList.HasFocus) DeleteSelectedKey();
+        if (_keysList.HasFocus) DeleteSelectedKey();
         else DeleteSelectedValue();
     }
 
     private void DeleteSelectedKey()
     {
-        var index = keysList.SelectedItem;
-        var node = tree[index];
+        var index = _keysList.SelectedItem;
+        var node = _tree[index];
         if (node is null) return;
 
         if (node.IsHive)
@@ -427,18 +428,18 @@ public sealed class RegistryApplication(IRegistryService registry)
             return;
         }
 
-        var parentIndex = tree.ParentIndex(index);
+        var parentIndex = _tree.ParentIndex(index);
         if (parentIndex is null) return;
-        var parent = tree[parentIndex.Value];
+        var parent = _tree[parentIndex.Value];
         if (parent is null) return;
 
         if (!Dialogs.Confirm("Delete Key",
                 $"Delete '{node.Name}' and everything under it?", "Delete"))
             return;
 
-        if (!TryWrite(() => registry.DeleteSubKeyTree(parent.Path, node.Name), "Cannot delete key")) return;
+        if (!TryWrite(() => _registry.DeleteSubKeyTree(parent.Path, node.Name), "Cannot delete key")) return;
 
-        tree.Reload(parentIndex.Value);
+        _tree.Reload(parentIndex.Value);
         SyncTree(parentIndex.Value);
     }
 
@@ -455,22 +456,22 @@ public sealed class RegistryApplication(IRegistryService registry)
 
         if (!Dialogs.Confirm("Delete Value", $"Delete value '{value.DisplayName}'?", "Delete")) return;
 
-        var selection = valuesList.SelectedItem;
-        if (TryWrite(() => registry.DeleteValue(current, value.Name), "Cannot delete value"))
+        var selection = _valuesList.SelectedItem;
+        if (TryWrite(() => _registry.DeleteValue(_current, value.Name), "Cannot delete value"))
             LoadValues(selection);
     }
 
     /// <summary>F2. Renames whichever pane has focus.</summary>
     private void RenameSelected()
     {
-        if (keysList.HasFocus) RenameSelectedKey();
+        if (_keysList.HasFocus) RenameSelectedKey();
         else RenameSelectedValue();
     }
 
     private void RenameSelectedKey()
     {
-        var index = keysList.SelectedItem;
-        var node = tree[index];
+        var index = _keysList.SelectedItem;
+        var node = _tree[index];
         if (node is null) return;
 
         if (node.IsHive)
@@ -479,19 +480,19 @@ public sealed class RegistryApplication(IRegistryService registry)
             return;
         }
 
-        var parentIndex = tree.ParentIndex(index);
+        var parentIndex = _tree.ParentIndex(index);
         var parentPath = node.Path.Parent();
         if (parentIndex is null || parentPath is null) return;
 
         var newName = Dialogs.Rename("key", node.Name, parentPath.Value);
         if (newName is null) return;
 
-        if (!TryWrite(() => registry.RenameSubKey(node.Path, newName), "Cannot rename key")) return;
+        if (!TryWrite(() => _registry.RenameSubKey(node.Path, newName), "Cannot rename key")) return;
 
-        tree.Reload(parentIndex.Value);
-        var renamed = tree.IndexOf(parentPath.Value.Child(newName));
+        _tree.Reload(parentIndex.Value);
+        var renamed = _tree.IndexOf(parentPath.Value.Child(newName));
         SyncTree(renamed >= 0 ? renamed : parentIndex.Value);
-        keysList.SetFocus();
+        _keysList.SetFocus();
     }
 
     private void RenameSelectedValue()
@@ -505,10 +506,10 @@ public sealed class RegistryApplication(IRegistryService registry)
             return;
         }
 
-        var newName = Dialogs.Rename("value", value.Name, current);
+        var newName = Dialogs.Rename("value", value.Name, _current);
         if (newName is null) return;
 
-        if (!TryWrite(() => registry.RenameValue(current, value.Name, newName), "Cannot rename value")) return;
+        if (!TryWrite(() => _registry.RenameValue(_current, value.Name, newName), "Cannot rename value")) return;
 
         LoadValues(null);
         SelectValueNamed(newName);
@@ -516,18 +517,18 @@ public sealed class RegistryApplication(IRegistryService registry)
 
     private void StartSearch()
     {
-        var query = SearchDialogs.AskForQuery(lastQuery);
+        var query = SearchDialogs.AskForQuery(_lastQuery);
         if (query is null) return;
 
-        lastQuery = query;
-        activeSearch = new RegistrySearch(registry, query, current);
+        _lastQuery = query;
+        _activeSearch = new RegistrySearch(_registry, query, _current);
         RunSearch(firstAttempt: true);
     }
 
     /// <summary>F3. Continues the live search, or opens the form if there is not one.</summary>
     private void FindNextMatch()
     {
-        if (activeSearch is null)
+        if (_activeSearch is null)
         {
             StartSearch();
             return;
@@ -537,7 +538,7 @@ public sealed class RegistryApplication(IRegistryService registry)
 
     private void RunSearch(bool firstAttempt)
     {
-        var result = SearchDialogs.Run(activeSearch!);
+        var result = SearchDialogs.Run(_activeSearch!);
 
         switch (result.Outcome)
         {
@@ -546,15 +547,15 @@ public sealed class RegistryApplication(IRegistryService registry)
                 break;
 
             case SearchOutcome.NotFound:
-                activeSearch = null;
+                _activeSearch = null;
                 Dialogs.Error("Find",
                     firstAttempt
-                        ? $"'{lastQuery!.Text}' was not found."
-                        : $"No more matches for '{lastQuery!.Text}'.");
+                        ? $"'{_lastQuery!.Text}' was not found."
+                        : $"No more matches for '{_lastQuery!.Text}'.");
                 break;
 
             case SearchOutcome.Failed:
-                activeSearch = null;
+                _activeSearch = null;
                 Dialogs.Error("Find", result.Error ?? "The search could not be completed.");
                 break;
 
@@ -565,7 +566,7 @@ public sealed class RegistryApplication(IRegistryService registry)
 
     private void RevealHit(SearchHit hit)
     {
-        var index = tree.Reveal(hit.Path);
+        var index = _tree.Reveal(hit.Path);
         if (index < 0)
         {
             Dialogs.Error("Find", $"Matched in {hit.Path}, but that key is no longer in the tree.");
@@ -576,21 +577,21 @@ public sealed class RegistryApplication(IRegistryService registry)
 
         if (hit.ValueName is null)
         {
-            keysList.SetFocus();
+            _keysList.SetFocus();
             return;
         }
 
-        if (!SelectValueNamed(hit.ValueName)) keysList.SetFocus();
+        if (!SelectValueNamed(hit.ValueName)) _keysList.SetFocus();
     }
 
     private bool SelectValueNamed(string name)
     {
-        for (var i = 0; i < valueSource.Count; i++)
+        for (var i = 0; i < _valueSource.Count; i++)
         {
-            if (!string.Equals(valueSource.At(i)?.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!string.Equals(_valueSource.At(i)?.Name, name, StringComparison.OrdinalIgnoreCase)) continue;
 
-            valuesList.SelectedItem = i;
-            valuesList.SetFocus();
+            _valuesList.SelectedItem = i;
+            _valuesList.SetFocus();
             RefreshFrameTitles();
             return true;
         }
@@ -619,13 +620,13 @@ public sealed class RegistryApplication(IRegistryService registry)
         if (code is < 32 or > 126) return false;
 
         var now = DateTime.UtcNow;
-        if ((now - typeAheadLast).TotalMilliseconds > TypeAheadTimeoutMs)
-            typeAheadBuffer = string.Empty;
-        typeAheadLast = now;
-        typeAheadBuffer += (char)code;
+        if ((now - _typeAheadLast).TotalMilliseconds > _typeAheadTimeoutMs)
+            _typeAheadBuffer = string.Empty;
+        _typeAheadLast = now;
+        _typeAheadBuffer += (char)code;
 
-        var startAfter = typeAheadBuffer.Length > 1 ? keysList.SelectedItem - 1 : keysList.SelectedItem;
-        var found = tree.FindByPrefix(typeAheadBuffer, startAfter);
+        var startAfter = _typeAheadBuffer.Length > 1 ? _keysList.SelectedItem - 1 : _keysList.SelectedItem;
+        var found = _tree.FindByPrefix(_typeAheadBuffer, startAfter);
         if (found >= 0) SyncTree(found);
 
         return true;

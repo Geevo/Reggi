@@ -19,8 +19,7 @@ public sealed class RegistryValueCodecTests
         ];
 
         var editable = RegistryValueCodec.ToEditable(RegistryValueType.MultiString, original);
-        var parsed = Assert.IsType<string[]>(
-            RegistryValueCodec.Parse(RegistryValueType.MultiString, editable));
+        var parsed = Assert.IsType<string[]>(RegistryValueCodec.Parse(RegistryValueType.MultiString, editable));
 
         Assert.Equal(original, parsed);
     }
@@ -28,18 +27,14 @@ public sealed class RegistryValueCodecTests
     [Fact]
     public void MultiStringDistinguishesNoEntriesFromOneEmptyEntry()
     {
-        var noEntries = RegistryValueCodec.ToEditable(
-            RegistryValueType.MultiString,
-            Array.Empty<string>());
-        var oneEmptyEntry = RegistryValueCodec.ToEditable(
-            RegistryValueType.MultiString,
-            new[] { string.Empty });
+        var noEntries = RegistryValueCodec.ToEditable(RegistryValueType.MultiString, Array.Empty<string>());
+        var oneEmptyEntry = RegistryValueCodec.ToEditable(RegistryValueType.MultiString, new[] { string.Empty });
 
         Assert.NotEqual(noEntries, oneEmptyEntry);
-        Assert.Empty(Assert.IsType<string[]>(
-            RegistryValueCodec.Parse(RegistryValueType.MultiString, noEntries)));
-        Assert.Equal(new[] { string.Empty }, Assert.IsType<string[]>(
-            RegistryValueCodec.Parse(RegistryValueType.MultiString, oneEmptyEntry)));
+        Assert.Empty(Assert.IsType<string[]>(RegistryValueCodec.Parse(RegistryValueType.MultiString, noEntries)));
+        Assert.Equal(
+            new[] { string.Empty },
+            Assert.IsType<string[]>(RegistryValueCodec.Parse(RegistryValueType.MultiString, oneEmptyEntry)));
     }
 
     [Fact]
@@ -48,8 +43,7 @@ public sealed class RegistryValueCodecTests
         byte[] original = [0x01, 0x02, 0xFF];
 
         var editable = RegistryValueCodec.ToEditable(RegistryValueType.None, original);
-        var parsed = Assert.IsType<byte[]>(
-            RegistryValueCodec.Parse(RegistryValueType.None, editable));
+        var parsed = Assert.IsType<byte[]>(RegistryValueCodec.Parse(RegistryValueType.None, editable));
 
         Assert.Equal("01 02 FF", editable);
         Assert.Equal(original, parsed);
@@ -59,8 +53,8 @@ public sealed class RegistryValueCodecTests
     [Fact]
     public void UnsupportedKindCannotBeParsedForEditing()
     {
-        var error = Assert.Throws<FormatException>(() =>
-            RegistryValueCodec.Parse(RegistryValueType.Unknown, "01 02 FF"));
+        var error = Assert.Throws<FormatException>(
+            () => RegistryValueCodec.Parse(RegistryValueType.Unknown, "01 02 FF"));
 
         Assert.Contains("cannot be edited safely", error.Message);
     }
@@ -70,9 +64,7 @@ public sealed class RegistryValueCodecTests
     {
         string[] value = ["part;with;semicolons", @"C:\Temp"];
 
-        var searchable = RegistryValueCodec.SearchableForms(
-            RegistryValueType.MultiString,
-            value).ToArray();
+        var searchable = RegistryValueCodec.SearchableForms(RegistryValueType.MultiString, value).ToArray();
 
         Assert.Equal(value, searchable);
     }

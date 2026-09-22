@@ -8,9 +8,9 @@ namespace RegTerm.UI;
 /// </summary>
 public sealed class PathBarView : View
 {
-    private const string Marker = "▎ ";
+    private const string _marker = "▎ ";
 
-    private RegistryPath path;
+    private RegistryPath _path;
 
     public PathBarView()
     {
@@ -20,11 +20,11 @@ public sealed class PathBarView : View
 
     public RegistryPath Path
     {
-        get => path;
+        get => _path;
         set
         {
-            if (path == value) return;
-            path = value;
+            if (_path == value) return;
+            _path = value;
             SetNeedsDisplay();
         }
     }
@@ -36,13 +36,13 @@ public sealed class PathBarView : View
 
         Move(0, 0);
         Driver.SetAttribute(Theme.Highlight);
-        var used = Draw.Clipped(Driver, Marker, width);
+        var used = Draw.Clipped(Driver, _marker, width);
 
         var remaining = width - used;
         if (remaining <= 0) return;
 
         // Keep the leaf visible when the path is clipped.
-        var text = Draw.EllipsizeStart(path.ToString(), remaining);
+        var text = Draw.EllipsizeStart(_path.ToString(), remaining);
         var sep = text.IndexOf('\\');
 
         if (sep > 0)

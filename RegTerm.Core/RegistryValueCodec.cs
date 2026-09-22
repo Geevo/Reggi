@@ -20,7 +20,7 @@ public static class RegistryValueCodec
     /// <summary>Separator used when a REG_MULTI_SZ is flattened into one edit box.</summary>
     public const char MultiStringSeparator = ';';
 
-    private const int MaxBinaryBytesShown = 128;
+    private const int _maxBinaryBytesShown = 128;
 
     /// <summary>Kinds offered when creating a new value, in the order they are listed.</summary>
     public static readonly RegistryValueType[] CreatableKinds =
@@ -34,8 +34,7 @@ public static class RegistryValueCodec
     ];
 
     /// <summary>True for the kinds that have a selectable number base.</summary>
-    public static bool IsNumeric(RegistryValueType kind) =>
-        kind is RegistryValueType.DWord or RegistryValueType.QWord;
+    public static bool IsNumeric(RegistryValueType kind) => kind is RegistryValueType.DWord or RegistryValueType.QWord;
 
     public static string TypeName(RegistryValueType kind) => kind switch
     {
@@ -60,8 +59,9 @@ public static class RegistryValueCodec
                 string.Create(CultureInfo.InvariantCulture, $"0x{(uint)i:x8} ({(uint)i})"),
             RegistryValueType.QWord when value is long l =>
                 string.Create(CultureInfo.InvariantCulture, $"0x{(ulong)l:x16} ({(ulong)l})"),
-            RegistryValueType.MultiString when value is string[] parts =>
-                parts.Length == 0 ? "(empty)" : string.Join("  ", parts),
+            RegistryValueType.MultiString when value is string[] parts => parts.Length == 0
+                ? "(empty)"
+                : string.Join("  ", parts),
             RegistryValueType.Binary or RegistryValueType.None or RegistryValueType.Unknown
                 when value is byte[] bytes => FormatBytes(bytes),
             _ => value as string ?? value.ToString() ?? string.Empty
@@ -71,8 +71,7 @@ public static class RegistryValueCodec
     /// <summary>
     /// Round-trippable rendering for an edit box.
     /// </summary>
-    public static string ToEditable(RegistryValueType kind, object? value,
-                                    NumberBase numberBase = NumberBase.Decimal)
+    public static string ToEditable(RegistryValueType kind, object? value, NumberBase numberBase = NumberBase.Decimal)
     {
         if (value is null) return string.Empty;
 
@@ -97,14 +96,10 @@ public static class RegistryValueCodec
     /// Parses edit-box text, throwing <see cref="FormatException"/> for invalid input.
     /// </summary>
     public static object Parse(
-        RegistryValueType kind,
-        string text,
-        NumberBase numberBase = NumberBase.Decimal) => kind switch
+        RegistryValueType kind, string text, NumberBase numberBase = NumberBase.Decimal) => kind switch
         {
-            RegistryValueType.DWord =>
-                unchecked((int)ParseUnsigned(text, uint.MaxValue, "32-bit", numberBase)),
-            RegistryValueType.QWord =>
-                unchecked((long)ParseUnsigned(text, ulong.MaxValue, "64-bit", numberBase)),
+            RegistryValueType.DWord => unchecked((int)ParseUnsigned(text, uint.MaxValue, "32-bit", numberBase)),
+            RegistryValueType.QWord => unchecked((long)ParseUnsigned(text, ulong.MaxValue, "64-bit", numberBase)),
             RegistryValueType.Binary or RegistryValueType.None => ParseHex(text),
             RegistryValueType.MultiString => ParseMultiString(text),
             RegistryValueType.Unknown =>
@@ -147,7 +142,7 @@ public static class RegistryValueCodec
     private static string FormatBytes(byte[] bytes)
     {
         if (bytes.Length == 0) return "(zero-length)";
-        var shown = Math.Min(bytes.Length, MaxBinaryBytesShown);
+        var shown = Math.Min(bytes.Length, _maxBinaryBytesShown);
         var hex = ToHex(bytes.AsSpan(0, shown));
         return shown == bytes.Length ? hex : $"{hex} ... ({bytes.Length} bytes)";
     }
@@ -216,8 +211,7 @@ public static class RegistryValueCodec
         for (var i = 0; i < encoded.Length; i++)
         {
             var ch = encoded[i];
-            if (ch == '\\' && i + 1 < encoded.Length &&
-                encoded[i + 1] is '\\' or MultiStringSeparator)
+            if (ch == '\\' && i + 1 < encoded.Length && encoded[i + 1] is '\\' or MultiStringSeparator)
             {
                 decoded.Append(encoded[++i]);
                 continue;
@@ -271,7 +265,8 @@ public static class RegistryValueCodec
         var bytes = new byte[cleaned.Length / 2];
         for (var i = 0; i < bytes.Length; i++)
         {
-            if (!byte.TryParse(cleaned.AsSpan(i * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out bytes[i]))
+            if (!byte.TryParse(
+                    cleaned.AsSpan(i * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out bytes[i]))
                 throw new FormatException($"'{cleaned.Substring(i * 2, 2)}' is not a valid hex byte.");
         }
         return bytes;

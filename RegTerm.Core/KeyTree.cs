@@ -5,26 +5,26 @@ namespace RegTerm.Core;
 /// </summary>
 public sealed class KeyTree(IRegistryService registry)
 {
-    private readonly List<KeyNode> nodes = [];
+    private readonly IRegistryService _registry = registry;
+    private readonly List<KeyNode> _nodes = [];
 
-    public IReadOnlyList<KeyNode> Nodes => nodes;
-    public int Count => nodes.Count;
+    public IReadOnlyList<KeyNode> Nodes => _nodes;
+    public int Count => _nodes.Count;
 
-    public KeyNode? this[int index] =>
-        index >= 0 && index < nodes.Count ? nodes[index] : null;
+    public KeyNode? this[int index] => index >= 0 && index < _nodes.Count ? _nodes[index] : null;
 
     public void LoadHives()
     {
-        nodes.Clear();
-        foreach (var hive in registry.HiveNames)
+        _nodes.Clear();
+        foreach (var hive in _registry.HiveNames)
         {
             var path = RegistryPath.Root(hive);
-            nodes.Add(new KeyNode
+            _nodes.Add(new KeyNode
             {
                 Path = path,
                 Name = hive,
                 Depth = 0,
-                HasChildren = registry.HasSubKeys(path)
+                HasChildren = _registry.HasSubKeys(path)
             });
         }
     }
@@ -34,7 +34,7 @@ public sealed class KeyTree(IRegistryService registry)
         var node = this[index];
         if (node is null || !node.HasChildren || node.Expanded) return false;
 
-        nodes.InsertRange(index + 1, ChildrenOf(node));
+        _nodes.InsertRange(index + 1, ChildrenOf(node));
         node.Expanded = true;
         return true;
     }
@@ -45,7 +45,7 @@ public sealed class KeyTree(IRegistryService registry)
         if (node is null || !node.Expanded) return false;
 
         var count = DescendantCount(index);
-        if (count > 0) nodes.RemoveRange(index + 1, count);
+        if (count > 0) _nodes.RemoveRange(index + 1, count);
         node.Expanded = false;
         return true;
     }
@@ -65,14 +65,14 @@ public sealed class KeyTree(IRegistryService registry)
 
         var wasExpanded = node.Expanded;
         Collapse(index);
-        node.HasChildren = registry.HasSubKeys(node.Path);
+        node.HasChildren = _registry.HasSubKeys(node.Path);
         if (wasExpanded || node.HasChildren) Expand(index);
     }
 
     public int IndexOf(RegistryPath path)
     {
-        for (var i = 0; i < nodes.Count; i++)
-            if (nodes[i].Path == path) return i;
+        for (var i = 0; i < _nodes.Count; i++)
+            if (_nodes[i].Path == path) return i;
         return -1;
     }
 
@@ -97,7 +97,7 @@ public sealed class KeyTree(IRegistryService registry)
 
         for (var i = 1; i < chain.Count; i++)
         {
-            if (!nodes[index].Expanded) Expand(index);
+            if (!_nodes[index].Expanded) Expand(index);
 
             var next = IndexOf(chain[i]);
             if (next < 0) return index;     // key vanished since the search saw it
@@ -112,7 +112,7 @@ public sealed class KeyTree(IRegistryService registry)
         if (node is null || node.Depth == 0) return null;
 
         for (var i = index - 1; i >= 0; i--)
-            if (nodes[i].Depth == node.Depth - 1) return i;
+            if (_nodes[i].Depth == node.Depth - 1) return i;
         return null;
     }
 
@@ -122,25 +122,25 @@ public sealed class KeyTree(IRegistryService registry)
         var node = this[index];
         if (node is null || !node.Expanded) return -1;
         var child = index + 1;
-        return child < nodes.Count && nodes[child].Depth == node.Depth + 1 ? child : -1;
+        return child < _nodes.Count && _nodes[child].Depth == node.Depth + 1 ? child : -1;
     }
 
     /// <summary>Wrapping type-ahead search over visible rows, starting after <paramref name="startAfter"/>.</summary>
     public int FindByPrefix(string prefix, int startAfter)
     {
-        if (prefix.Length == 0 || nodes.Count == 0) return -1;
+        if (prefix.Length == 0 || _nodes.Count == 0) return -1;
 
-        for (var offset = 1; offset <= nodes.Count; offset++)
+        for (var offset = 1; offset <= _nodes.Count; offset++)
         {
-            var i = ((startAfter + offset) % nodes.Count + nodes.Count) % nodes.Count;
-            if (nodes[i].Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return i;
+            var i = ((startAfter + offset) % _nodes.Count + _nodes.Count) % _nodes.Count;
+            if (_nodes[i].Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return i;
         }
         return -1;
     }
 
     private List<KeyNode> ChildrenOf(KeyNode parent)
     {
-        var names = registry.GetSubKeyNames(parent.Path);
+        var names = _registry.GetSubKeyNames(parent.Path);
         var children = new List<KeyNode>(names.Count);
         foreach (var name in names)
         {
@@ -150,7 +150,7 @@ public sealed class KeyTree(IRegistryService registry)
                 Path = path,
                 Name = name,
                 Depth = parent.Depth + 1,
-                HasChildren = registry.HasSubKeys(path)
+                HasChildren = _registry.HasSubKeys(path)
             });
         }
         return children;
@@ -158,9 +158,9 @@ public sealed class KeyTree(IRegistryService registry)
 
     private int DescendantCount(int index)
     {
-        var depth = nodes[index].Depth;
+        var depth = _nodes[index].Depth;
         var count = 0;
-        for (var i = index + 1; i < nodes.Count && nodes[i].Depth > depth; i++) count++;
+        for (var i = index + 1; i < _nodes.Count && _nodes[i].Depth > depth; i++) count++;
         return count;
     }
 }

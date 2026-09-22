@@ -19,7 +19,7 @@ internal static class ScrollBars
         {
             list.TopItem = bar.Position;
 
-        // Mirror ListView's clamped position.
+            // Mirror ListView's clamped position.
             if (list.TopItem != bar.Position) bar.Position = list.TopItem;
 
             list.SetNeedsDisplay();

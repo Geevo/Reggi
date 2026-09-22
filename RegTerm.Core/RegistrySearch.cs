@@ -22,27 +22,27 @@ public sealed class RegistrySearch
             IsRoot ? RegistryPath.Root(SubKeys![index]) : Path.Child(SubKeys![index]);
     }
 
-    private readonly IRegistryService registry;
-    private readonly SearchQuery query;
-    private readonly Stack<Frame> stack = new();
+    private readonly IRegistryService _registry;
+    private readonly SearchQuery _query;
+    private readonly Stack<Frame> _stack = new();
 
-    private volatile string scanning = string.Empty;
-    private long keysScanned;
+    private volatile string _scanning = string.Empty;
+    private long _keysScanned;
 
     public RegistrySearch(IRegistryService registry, SearchQuery query, RegistryPath start)
     {
-        this.registry = registry;
-        this.query = query;
+        _registry = registry;
+        _query = query;
         Seed(start);
     }
 
     /// <summary>Path currently being examined, for progress display.</summary>
-    public string Scanning => scanning;
+    public string Scanning => _scanning;
 
-    public long KeysScanned => Interlocked.Read(ref keysScanned);
+    public long KeysScanned => Interlocked.Read(ref _keysScanned);
 
     /// <summary>True once the walk has run off the end of the registry.</summary>
-    public bool Exhausted => stack.Count == 0;
+    public bool Exhausted => _stack.Count == 0;
 
     /// <summary>
     /// Advances until the next match, or null if the registry is exhausted.
@@ -50,32 +50,32 @@ public sealed class RegistrySearch
     /// </summary>
     public SearchHit? FindNext(CancellationToken cancellation)
     {
-        while (stack.Count > 0)
+        while (_stack.Count > 0)
         {
             cancellation.ThrowIfCancellationRequested();
-            var frame = stack.Peek();
+            var frame = _stack.Peek();
 
             switch (frame.Stage)
             {
                 case Stage.Key:
                     frame.Stage = Stage.Values;
-                    scanning = frame.Path.ToString();
-                    Interlocked.Increment(ref keysScanned);
+                    _scanning = frame.Path.ToString();
+                    Interlocked.Increment(ref _keysScanned);
 
                     // Hive names are not included in key-name matches.
-                    if (query.MatchKeys && !frame.Path.IsHiveRoot && query.Matches(frame.Path.LeafName))
+                    if (_query.MatchKeys && !frame.Path.IsHiveRoot && _query.Matches(frame.Path.LeafName))
                         return new SearchHit(frame.Path, null);
                     break;
 
                 case Stage.Values:
-                    if (!query.MatchValueNames && !query.MatchData)
+                    if (!_query.MatchValueNames && !_query.MatchData)
                     {
                         frame.Stage = Stage.Children;
                         break;
                     }
 
                     // Value reads are cached per key.
-                    frame.Values ??= registry.GetValues(frame.Path).Values;
+                    frame.Values ??= _registry.GetValues(frame.Path).Values;
 
                     if (frame.ValueIndex >= frame.Values.Count)
                     {
@@ -86,31 +86,31 @@ public sealed class RegistrySearch
                     var value = frame.Values[frame.ValueIndex++];
                     if (value.IsUnset) break;
 
-                    if (query.MatchValueNames && query.Matches(value.DisplayName))
+                    if (_query.MatchValueNames && _query.Matches(value.DisplayName))
                         return new SearchHit(frame.Path, value.Name);
 
-                    if (query.MatchData &&
+                    if (_query.MatchData &&
                         RegistryValueCodec
-                            .SearchableForms(value.Kind, value.RawValue, query.LooksHexadecimal)
-                            .Any(query.Matches))
+                            .SearchableForms(value.Kind, value.RawValue, _query.LooksHexadecimal)
+                            .Any(_query.Matches))
                         return new SearchHit(frame.Path, value.Name);
                     break;
 
                 case Stage.Children:
-                    frame.SubKeys ??= registry.GetSubKeyNames(frame.Path);
+                    frame.SubKeys ??= _registry.GetSubKeyNames(frame.Path);
 
                     if (frame.ChildIndex >= frame.SubKeys.Count)
                     {
-                        stack.Pop();
+                        _stack.Pop();
                         break;
                     }
 
-                    stack.Push(new Frame(frame.ChildPath(frame.ChildIndex++)));
+                    _stack.Push(new Frame(frame.ChildPath(frame.ChildIndex++)));
                     break;
             }
         }
 
-        scanning = string.Empty;
+        _scanning = string.Empty;
         return null;
     }
 
@@ -119,7 +119,7 @@ public sealed class RegistrySearch
     /// </summary>
     private void Seed(RegistryPath start)
     {
-        var hives = registry.HiveNames;
+        var hives = _registry.HiveNames;
 
         var hiveIndex = 0;
         for (var i = 0; i < hives.Count; i++)
@@ -131,7 +131,7 @@ public sealed class RegistrySearch
             }
         }
 
-        stack.Push(new Frame(default, isRoot: true)
+        _stack.Push(new Frame(default, isRoot: true)
         {
             Stage = Stage.Children,
             SubKeys = hives,
@@ -141,7 +141,7 @@ public sealed class RegistrySearch
         var chain = AncestorChain(start);
         for (var i = 0; i < chain.Count - 1; i++)
         {
-            var subKeys = registry.GetSubKeyNames(chain[i]);
+            var subKeys = _registry.GetSubKeyNames(chain[i]);
             var nextName = chain[i + 1].LeafName;
 
             var resumeAt = subKeys.Count;
@@ -154,7 +154,7 @@ public sealed class RegistrySearch
                 }
             }
 
-            stack.Push(new Frame(chain[i])
+            _stack.Push(new Frame(chain[i])
             {
                 Stage = Stage.Children,     // already passed; do not rescan name or values
                 SubKeys = subKeys,
@@ -162,7 +162,7 @@ public sealed class RegistrySearch
             });
         }
 
-        stack.Push(new Frame(start));       // scanned in full, starting at its own name
+        _stack.Push(new Frame(start));       // scanned in full, starting at its own name
     }
 
     /// <summary>Hive root first, down to and including <paramref name="path"/>.</summary>

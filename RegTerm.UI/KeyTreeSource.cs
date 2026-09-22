@@ -7,13 +7,14 @@ namespace RegTerm.UI;
 /// <summary>Renders <see cref="KeyTree"/> rows with indentation, chevrons and per-row colour.</summary>
 public sealed class KeyTreeSource(KeyTree tree) : IListDataSource
 {
-    private const int IndentPerLevel = 2;
+    private const int _indentPerLevel = 2;
+    private readonly KeyTree _tree = tree;
 
-    public int Count => tree.Count;
+    public int Count => _tree.Count;
 
-    public int Length => tree.Nodes.Count == 0
+    public int Length => _tree.Nodes.Count == 0
         ? 0
-        : tree.Nodes.Max(n => n.Depth * IndentPerLevel + 2 + n.Name.Length);
+        : _tree.Nodes.Max(n => n.Depth * _indentPerLevel + 2 + n.Name.Length);
 
     public void Render(ListView container, ConsoleDriver driver, bool selected, int item,
                        int col, int line, int width, int start = 0)
@@ -21,7 +22,7 @@ public sealed class KeyTreeSource(KeyTree tree) : IListDataSource
         // IListDataSource coordinates are relative to the ListView.
         container.Move(col, line);
 
-        var node = tree[item];
+        var node = _tree[item];
         if (node is null)
         {
             Draw.Blank(driver, width);
@@ -30,7 +31,7 @@ public sealed class KeyTreeSource(KeyTree tree) : IListDataSource
 
         var remaining = width;
 
-        var indent = Math.Min(node.Depth * IndentPerLevel, remaining);
+        var indent = Math.Min(node.Depth * _indentPerLevel, remaining);
         Draw.Blank(driver, indent);
         remaining -= indent;
 
@@ -45,5 +46,5 @@ public sealed class KeyTreeSource(KeyTree tree) : IListDataSource
 
     public bool IsMarked(int item) => false;
     public void SetMark(int item, bool value) { }
-    public IList ToList() => tree.Nodes.Select(n => n.Name).ToList();
+    public IList ToList() => _tree.Nodes.Select(n => n.Name).ToList();
 }
