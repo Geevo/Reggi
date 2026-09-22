@@ -30,24 +30,36 @@ public sealed class RegistryApplication(IRegistryService registryService)
     /// <summary>Set while rebuilding a list, so selection events do not re-enter.</summary>
     private bool _suppressSelectionEvents;
 
-    public void Run()
+    public void Run(bool useNetDriver = false, Action<string>? startupTrace = null)
     {
+        startupTrace?.Invoke("Before Application.Init");
+        if (useNetDriver)
+            Application.UseSystemConsole = true;
         Application.Init();
+
+        startupTrace?.Invoke($"After Application.Init; driver={Application.Driver.GetType().Name}");
         try
         {
             Theme.Apply();
+            startupTrace?.Invoke("After Theme.Apply");
             BuildLayout();
+            startupTrace?.Invoke("After BuildLayout");
 
             _tree.LoadHives();
+            startupTrace?.Invoke("After LoadHives");
             _treeSource = new KeyTreeSource(_tree);
             SyncTree(0);
+            startupTrace?.Invoke("After SyncTree");
 
             _keysList.SetFocus();
+            startupTrace?.Invoke("Before Application.Run");
             Application.Run();
+            startupTrace?.Invoke("After Application.Run");
         }
         finally
         {
             Application.Shutdown();
+            startupTrace?.Invoke("After Application.Shutdown");
         }
     }
 

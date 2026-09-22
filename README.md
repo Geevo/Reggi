@@ -20,6 +20,15 @@ dotnet publish Reggi -c Release -r win-x64
 
 Find `reggi.exe` in `Reggi/bin/Release/net10.0-windows/win-x64/publish/`. It runs without a .NET runtime installed. Native publishing needs the Visual Studio C++ build tools; if the linker or `vswhere.exe` can't be found, try **Developer PowerShell for Visual Studio**.
 
+If Command Prompt stays blank when you run the exe, try the alternative console driver:
+
+```bat
+chcp 65001
+reggi.exe --net-driver
+```
+
+To see where startup stops, run `reggi.exe --trace-startup` (add `--net-driver` if needed). The trace is written to `%TEMP%\reggi-startup.log`.
+
 ## Getting around
 
 Use `Tab` to switch between keys and values. The bar at the bottom shows the main shortcuts, and `F1` opens help in the app.
