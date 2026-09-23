@@ -40,6 +40,7 @@ public sealed class RegistryApplication(IRegistryService registryService)
         startupTrace?.Invoke($"After Application.Init; driver={Application.Driver.GetType().Name}");
         try
         {
+            Application.RootKeyEvent += FunctionKeyInput.Normalize;
             Theme.Apply();
             startupTrace?.Invoke("After Theme.Apply");
             BuildLayout();
@@ -58,6 +59,7 @@ public sealed class RegistryApplication(IRegistryService registryService)
         }
         finally
         {
+            Application.RootKeyEvent -= FunctionKeyInput.Normalize;
             Application.Shutdown();
             startupTrace?.Invoke("After Application.Shutdown");
         }

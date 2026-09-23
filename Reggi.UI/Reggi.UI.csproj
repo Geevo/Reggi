@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Reggi.Core\Reggi.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Reggi.Tests" />
+  </ItemGroup>
+
 </Project>
