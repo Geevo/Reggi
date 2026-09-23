@@ -17,6 +17,12 @@ if (traceStartup)
     Console.Error.WriteLine($"Startup trace: {tracePath}");
     Trace($"Main entered; OS={Environment.OSVersion}; input redirected={Console.IsInputRedirected}; output redirected={Console.IsOutputRedirected}");
 }
+else
+{
+    // Prime the console with a normal write before Terminal.Gui takes over the screen.
+    Console.Error.WriteLine();
+}
+Console.Error.Flush();
 
 try
 {
