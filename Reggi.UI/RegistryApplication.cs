@@ -30,7 +30,8 @@ public sealed class RegistryApplication(IRegistryService registryService)
     /// <summary>Set while rebuilding a list, so selection events do not re-enter.</summary>
     private bool _suppressSelectionEvents;
 
-    public void Run(bool useNetDriver = false, Action<string>? startupTrace = null)
+    public void Run(bool useNetDriver = false, Action<string>? startupTrace = null,
+                    bool normalizeFunctionKeys = false)
     {
         startupTrace?.Invoke("Before Application.Init");
         if (useNetDriver)
@@ -40,7 +41,8 @@ public sealed class RegistryApplication(IRegistryService registryService)
         startupTrace?.Invoke($"After Application.Init; driver={Application.Driver.GetType().Name}");
         try
         {
-            Application.RootKeyEvent += FunctionKeyInput.Normalize;
+            if (normalizeFunctionKeys)
+                Application.RootKeyEvent += FunctionKeyInput.Normalize;
             Theme.Apply();
             startupTrace?.Invoke("After Theme.Apply");
             BuildLayout();
@@ -59,7 +61,8 @@ public sealed class RegistryApplication(IRegistryService registryService)
         }
         finally
         {
-            Application.RootKeyEvent -= FunctionKeyInput.Normalize;
+            if (normalizeFunctionKeys)
+                Application.RootKeyEvent -= FunctionKeyInput.Normalize;
             Application.Shutdown();
             startupTrace?.Invoke("After Application.Shutdown");
         }

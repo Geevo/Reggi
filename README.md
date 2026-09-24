@@ -27,7 +27,9 @@ chcp 65001
 reggi.exe --net-driver
 ```
 
-To see where startup stops, run `reggi.exe --trace-startup` (add `--net-driver` if needed). The trace is written to `%TEMP%\reggi-startup.log`.
+For a vPro serial console, use `reggi.exe --vpro`. It selects that driver, switches to UTF-8 for the session, and translates its F1–F12 key codes. No separate `chcp` command needed.
+
+To see where startup stops, add `--trace-startup` to either command. The trace is written to `%TEMP%\reggi-startup.log`.
 
 ## Getting around
 
