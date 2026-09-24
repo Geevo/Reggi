@@ -88,7 +88,7 @@ public static class Theme
         {
             Normal = Attribute.Make(_text, Color.Black),
             Focus = Selected,
-            HotNormal = Highlight,
+            HotNormal = Normal,
             HotFocus = Selected,
             Disabled = Dimmed
         };
